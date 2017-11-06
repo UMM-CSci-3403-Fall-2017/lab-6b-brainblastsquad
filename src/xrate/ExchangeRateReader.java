@@ -118,6 +118,59 @@ public class ExchangeRateReader {
      * @throws SAXException
      */
     public float getExchangeRate(String fromCurrency, String toCurrency, int year, int month, int day) throws IOException, ParserConfigurationException, SAXException {
-    	return Float.MIN_VALUE; 
+    	
+    	// Creating the right url
+    	String url = baseURL + Integer.toString(year) + "/";
+        String checkMonth = Integer.toString(month) + "/";
+        String checkDay = Integer.toString(day);
+        
+        // Check if month or day is less than ten, if so add a 0 before the number
+        if(month < 10) {
+        	checkMonth = "0" + Integer.toString(month) + "/";
+        	
+        }
+        
+        if(day < 10) {
+        	checkDay = "0" + Integer.toString(day);
+        	
+        }
+        
+        // Creates the full url
+        url = url + checkMonth + checkDay + ".xml";
+        
+        URL finalURL = new URL(url);
+        InputStream xmlStream = finalURL.openStream();
+        
+        // Creates a document in which we can parse through to find the information we need
+        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(xmlStream);
+        doc.getDocumentElement().normalize();
+        
+        
+        float toReturn = Float.MIN_VALUE;
+        float firstRate = Float.MIN_VALUE;
+        float secondRate = Float.MIN_VALUE;
+        
+        // Creates two NodeLists from our documents infromation by the currency_code and rate tags
+        NodeList codes = doc.getElementsByTagName("currency_code");
+        NodeList rates = doc.getElementsByTagName("rate");
+        
+        
+        // Loop to find fromCurrency and toCurrency and set first and second rate respectively
+        for(int i = 0; i < codes.getLength(); i++) {
+        	if(codes.item(i).getNodeType() == codes.item(i).ELEMENT_NODE) {
+        		if(fromCurrency.equals(codes.item(i).getTextContent())) {
+        			firstRate = new Float(rates.item(i).getTextContent());
+        		}
+        		if(toCurrency.equals(codes.item(i).getTextContent())) {
+        			secondRate = new Float(rates.item(i).getTextContent());
+        		}
+        	}
+        }
+        
+    	// Compute the exchange rate of firstRate vs secondRate
+        toReturn = firstRate/secondRate;
+        return toReturn;
     }
 }
