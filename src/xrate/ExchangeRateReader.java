@@ -1,5 +1,15 @@
 package xrate;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 /**
  * Provide access to basic currency exchange rate services.
  * 
@@ -18,8 +28,11 @@ public class ExchangeRateReader {
      * @param baseURL
      *            the base URL for requests
      */
+	
+	public String baseURL;
+	
     public ExchangeRateReader(String baseURL) {
-        // TODO Your code here
+        this.baseURL = baseURL;
     }
 
     /**
@@ -39,9 +52,52 @@ public class ExchangeRateReader {
      * @throws ParserConfigurationException
      * @throws SAXException
      */
-    public float getExchangeRate(String currencyCode, int year, int month, int day) {
-        // TODO Your code here
-        throw new UnsupportedOperationException();
+    public float getExchangeRate(String currencyCode, int year, int month, int day) throws IOException, ParserConfigurationException, SAXException {
+    	
+    	// Creating the right url
+        String url = baseURL + Integer.toString(year) + "/";
+        String checkMonth = Integer.toString(month) + "/";
+        String checkDay = Integer.toString(day);
+        
+        // Check if month or day is less than ten, if so add a 0 before the number
+        if(month < 10) {
+        	checkMonth = "0" + Integer.toString(month) + "/";
+        	
+        }
+        
+        if(day < 10) {
+        	checkDay = "0" + Integer.toString(day);
+        	
+        }
+        
+        // Creates the full url
+        url = url + checkMonth + checkDay + ".xml";
+        
+        URL finalURL = new URL(url);
+        InputStream xmlStream = finalURL.openStream();
+        
+        // Creates a document in which we can parse through to find the information we need
+        DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(xmlStream);
+        doc.getDocumentElement().normalize();
+         
+        // Creates two NodeLists from our documents infromation by the currency_code and rate tags
+        NodeList codes = doc.getElementsByTagName("currency_code");
+        NodeList rates = doc.getElementsByTagName("rate");
+        
+        // Loop to find currencyCode in the NodeList codes, once found sets toReturn to rates.item(i) where
+        // i is the same index which currencyCode was found in codes.item(i)
+        float toReturn = Float.MIN_VALUE;
+        for(int i = 0; i < codes.getLength(); i++) {
+        	if(codes.item(i).getNodeType() == codes.item(i).ELEMENT_NODE) {
+        		if(currencyCode.equals(codes.item(i).getTextContent())) {
+        		toReturn = new Float(rates.item(i).getTextContent());
+        		}
+        	}
+        }
+        
+        return toReturn;
     }
 
     /**
@@ -61,10 +117,7 @@ public class ExchangeRateReader {
      * @throws ParserConfigurationException
      * @throws SAXException
      */
-    public float getExchangeRate(
-            String fromCurrency, String toCurrency,
-            int year, int month, int day) {
-        // TODO Your code here
-        throw new UnsupportedOperationException();
+    public float getExchangeRate(String fromCurrency, String toCurrency, int year, int month, int day) throws IOException, ParserConfigurationException, SAXException {
+    	return Float.MIN_VALUE; 
     }
 }
